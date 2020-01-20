@@ -21,5 +21,5 @@ func (d *decoder) DecodePackage() error {
 }
 
 func (d *decoder) DecodeContent() (messaging.Content, error) {
-	return nil, errors.New(fmt.Sprintf("unknown package type %v, decode failed", d.pkg.PackageType()))
+	return nil, errors.New(fmt.Sprintf("unknown content type %v, decode failed", d.pkg.ContentID()))
 }

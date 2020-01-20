@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"playground/messaging"
+	"time"
 )
 
 type encoder struct {
@@ -12,6 +13,7 @@ type encoder struct {
 }
 
 func NewEncoder(pkg messaging.Package) *encoder {
+	gob.Register(time.Time{})
 	return &encoder{
 		pkg: pkg,
 	}
@@ -25,7 +27,7 @@ func (e *encoder) EncodePackage() error {
 	if encodedContent, err = e.pkg.EncodedContent(); err != nil {
 		return err
 	}
-	if err = binary.Write(buf, binary.BigEndian, e.pkg.ContentID()); err != nil {
+	if err = binary.Write(buf, binary.BigEndian, uint16(e.pkg.ContentID())); err != nil {
 		return err
 	}
 	if err = binary.Write(buf, binary.BigEndian, e.pkg.PackageType()); err != nil {

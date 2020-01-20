@@ -5,7 +5,8 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"playground/messaging"
-	content2 "playground/messaging/content"
+	"playground/messaging/content"
+	"time"
 )
 
 type decoder struct {
@@ -13,6 +14,7 @@ type decoder struct {
 }
 
 func NewDecoder(pkg messaging.Package) *decoder {
+	gob.Register(time.Time{})
 	return &decoder{
 		pkg: pkg,
 	}
@@ -20,39 +22,39 @@ func NewDecoder(pkg messaging.Package) *decoder {
 
 func (d *decoder) DecodePackage() error {
 	var err error
-	var contentID uint16
+	var contentID messaging.ContentID
 	var encodedPkg []byte
-	var packageType byte
+	var pkgType messaging.PackageType
 	var postmark int64
 	var returnAddress uint32
-	var vertical byte
+	var vertical messaging.Vertical
 	var pkg = d.pkg
 
 	if encodedPkg, err = pkg.EncodedPackage(); err != nil {
 		return err
 	}
 	buf := bytes.NewBuffer(encodedPkg)
-	if err = binary.Read(buf, binary.BigEndian, contentID); err != nil {
+	if err = binary.Read(buf, binary.BigEndian, &contentID); err != nil {
 		return err
 	}
-	if err = binary.Read(buf, binary.BigEndian, packageType); err != nil {
+	if err = binary.Read(buf, binary.BigEndian, &pkgType); err != nil {
 		return err
 	}
-	if err = binary.Read(buf, binary.BigEndian, postmark); err != nil {
+	if err = binary.Read(buf, binary.BigEndian, &postmark); err != nil {
 		return err
 	}
-	if err = binary.Read(buf, binary.BigEndian, returnAddress); err != nil {
+	if err = binary.Read(buf, binary.BigEndian, &returnAddress); err != nil {
 		return err
 	}
-	if err = binary.Read(buf, binary.BigEndian, vertical); err != nil {
+	if err = binary.Read(buf, binary.BigEndian, &vertical); err != nil {
 		return err
 	}
-	pkg.SetContentID(messaging.ContentID(contentID)).
+	pkg.SetContentID(contentID).
 		SetEncodedContent(buf.Bytes()).
-		SetPackageType(messaging.PackageType(packageType)).
+		SetPackageType(pkgType).
 		SetPostmark(postmark).
 		SetReturnAddress(returnAddress).
-		SetVertical(messaging.Vertical(vertical))
+		SetVertical(vertical)
 	return nil
 }
 
@@ -65,9 +67,9 @@ func (d *decoder) DecodeContent() (messaging.Content, error) {
 	}
 	buf := bytes.NewBuffer(encodedContent)
 	enc := gob.NewDecoder(buf)
-	content := content2.GetContent(d.pkg.ContentID())
-	if err := enc.Decode(content); err != nil {
+	cont := content.GetContent(d.pkg.ContentID())
+	if err := enc.Decode(cont); err != nil {
 		return nil, err
 	}
-	return content, nil
+	return cont, nil
 }
